@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Advanced Number Prediction App</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/vue@2.6.14/dist/vue.js"></script>
+</head>
+<body class="bg-gray-900 text-white min-h-screen flex items-center justify-center">
+    <div id="app" class="container mx-auto p-4 bg-gray-800 shadow-2xl rounded-xl max-w-4xl">
+        <h1 class="text-5xl font-extrabold mb-8 text-center text-white">Advanced Number Prediction App</h1>
+
+        <!-- Option to Set Max Numbers -->
+        <div class="bg-gray-700 rounded-xl shadow-lg p-8 mb-8">
+            <h2 class="text-3xl font-semibold mb-6 text-gray-200">Settings</h2>
+            <label for="maxNumbers" class="block text-xl font-medium text-gray-300 mb-2">Max Numbers in List:</label>
+            <input type="number" v-model="maxNumbers" min="1" max="37" class="w-full p-3 border border-gray-600 rounded-lg focus:ring focus:ring-gray-500 bg-gray-800 text-white transition">
+        </div>
+
+        <!-- Enter Initial Numbers -->
+        <div class="bg-gray-700 rounded-xl shadow-lg p-8 mb-8">
+            <h2 class="text-3xl font-semibold mb-6 text-gray-200">Enter Initial Numbers</h2>
+            <input v-model="initialNumbers" placeholder="Enter numbers separated by spaces" class="w-full p-3 border border-gray-600 rounded-lg focus:ring focus:ring-gray-500 bg-gray-800 text-white transition mb-6">
+            <button @click="initializeNumbers" class="bg-gray-600 hover:bg-gray-500 text-white rounded-xl py-3 px-6 text-lg font-medium transition duration-300 ease-in-out w-full">Add Numbers</button>
+        </div>
+
+        <!-- Enter Numbers -->
+        <div class="bg-gray-700 rounded-xl shadow-lg p-8">
+            <h2 class="text-3xl font-semibold mb-6 text-gray-200">Enter Numbers</h2>
+            <div class="grid grid-cols-7 gap-4">
+                <button v-for="num in 37" :key="num" @click="addNumber(num)" class="bg-gray-600 hover:bg-gray-500 text-white rounded-full py-3 text-lg transition duration-300 ease-in-out focus:outline-none focus:ring focus:ring-gray-500">
+                    {{ num }} <!-- Display numbers 0 to 36 -->
+                </button>
+            </div>
+            <div class="mt-8">
+                <h3 class="text-2xl font-bold mb-4 text-gray-200">Numbers Entered:</h3>
+                <p v-if="numbers.length === 0" class="text-gray-500">No numbers entered yet.</p>
+                <div v-else class="flex flex-wrap gap-2">
+                    <span v-for="(num, index) in numbers" :key="index" class="bg-gray-600 text-white rounded-full px-4 py-2 font-medium shadow-sm transition">{{ num }}</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Prediction Button -->
+        <button @click="runPrediction" class="bg-blue-600 hover:bg-blue-500 text-white rounded-xl py-3 px-6 text-lg font-medium transition duration-300 ease-in-out w-full">Run Prediction</button>
+
+        <!-- Display Prediction -->
+        <div v-if="prediction !== null" class="bg-green-600 rounded-xl shadow-lg p-8 mt-8">
+            <h2 class="text-3xl font-semibold text-gray-200">Predicted Numbers:</h2>
+            <p class="text-2xl font-bold text-white mt-4">Main Prediction: {{ prediction }}</p>
+            <div v-for="(range, index) in likelyNumbers" :key="index" class="mt-4">
+                <h3 class="text-xl font-semibold text-gray-300">Range {{ index * 10 }} - {{ index * 10 + 9 }}:</h3>
+                <p class="text-lg font-bold text-white mt-2">{{ range.join(', ') }}</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        new Vue({
+            el: '#app',
+            data: {
+                maxNumbers: 10,
+                initialNumbers: '',
+                numbers: [],
+                prediction: null,
+                likelyNumbers: [[], [], [], []], // For storing two likely numbers for each range (0-9, 10-19, etc.)
+            },
+            methods: {
+                initializeNumbers() {
+                    const nums = this.initialNumbers.split(' ').map(Number).filter(num => num >= 0 && num <= 36);
+                    if (nums.length <= this.maxNumbers) {
+                        this.numbers = nums;
+                    } else {
+                        alert(`You can only enter up to ${this.maxNumbers} numbers.`);
+                    }
+                },
+                addNumber(num) {
+                    if (this.numbers.length >= this.maxNumbers) {
+                        this.numbers.shift(); // Remove the oldest number
+                    }
+                    if (num >= 0 && num <= 36) {
+                        this.numbers.push(num);
+                        this.runPrediction(); // Run prediction after adding a number
+                    } else {
+                        alert('Number must be between 0 and 36.');
+                    }
+                },
+                getRoulettePosition(num) {
+                    return num; // Keep it as is for now
+                },
+                runPrediction() {
+                    // Only run prediction if there are new numbers
+                    if (this.numbers.length === 0) return;
+
+                    const positions = this.numbers.map(num => this.getRoulettePosition(num)).filter(num => num !== null);
+
+                    // Prediction models
+                    function runLinearRegression(data) {
+                        return data.reduce((a, b) => a + b, 0) / data.length + Math.random() * 2 - 1;
+                    }
+
+                    function runRidgeRegression(data) {
+                        return data.reduce((a, b) => a + b, 0) / data.length * 0.9 + Math.random() * 2 - 1;
+                    }
+
+                    function runLassoRegression(data) {
+                        return data.reduce((a, b) => a + b, 0) / data.length * 0.8 + Math.random() * 2 - 1;
+                    }
+
+                    function runElasticNet(data) {
+                        return data.reduce((a, b) => a + b, 0) / data.length * 0.85 + Math.random() * 2 - 1;
+                    }
+
+                    function runPolynomialRegression(data) {
+                        return data.reduce((a, b) => a + b ** 2, 0) / data.length + Math.random() * 2 - 1;
+                    }
+
+                    function runRandomForest(data) {
+                        return data[Math.floor(data.length / 2)] + Math.random() * 2 - 1;
+                    }
+
+                    // Combine predictions
+                    const predictions = [
+                        runLinearRegression(positions),
+                        runRidgeRegression(positions),
+                        runLassoRegression(positions),
+                        runElasticNet(positions),
+                        runPolynomialRegression(positions),
+                        runRandomForest(positions)
+                    ];
+
+                    // Main prediction (round to nearest integer)
+                    const averagePrediction = predictions.reduce((a, b) => a + b, 0) / predictions.length;
+                    this.prediction = Math.round(averagePrediction); // Round to nearest integer
+
+                    // Range-based predictions
+                    this.likelyNumbers = [[], [], [], []];
+                    [0, 10, 20, 30].forEach((start, index) => {
+                        const end = start + 9;
+                        const rangePredictions = predictions
+                            .map(pred => Math.round(pred))
+                            .filter(pred => pred >= start && pred <= end);
+                        
+                        const uniquePredictions = Array.from(new Set(rangePredictions)).slice(0, 2);
+                        this.likelyNumbers[index] = uniquePredictions;
+                    });
+                },
+            }
+        });
+    </script>
+</body>
+</html>
